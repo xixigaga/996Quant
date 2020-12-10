@@ -24,7 +24,9 @@
 # SOFTWARE.
 #
 """
-聚宽分钟线数据下载
+聚宽小时线(60分钟线)数据下载，范围精选白马蓝筹股，下载到当前目录 \datastore\kline\stock\ 下
+需开通聚宽本地数据接口，文档：https://www.joinquant.com/help/api/help?name=JQData
+申请地址: https://www.joinquant.com/default/index/sdk#jq-sdk-apply
 """
 
 import os
@@ -45,6 +47,8 @@ from GolemQ.utils.path import (
     import_metadata_from_pickle,
 )
 from GolemQ.utils.settings import (
+    exists_settings,
+    input_settings,
     load_settings,
     save_settings,
 )
@@ -55,21 +59,32 @@ except:
     pass
 
 if __name__ == '__main__':
-    #password = pd.DataFrame({'host':['jqdatasdk'],
-    #    'username':['13981813381'],
-    #    'password':['813381']}, columns=['host',
-    #                                   'username',
-    #                                   'password'])
-    # 用上面的代码保存密码到用户配置 .GolemQ 目录下面
-    password = load_settings('password.pickle')
-    auth(password.username[0], password.password[0]) #ID是申请时所填写的手机号；Password为聚宽官网登录密码，新申请用户默认为手机号后6位
-    asset = u'000001.XSHE'
+    # 定义保存云端量化数据源用户名密码的的 pd.DataFrame 结构
+    password = pd.DataFrame({'host':['jqdatasdk'],
+                             'username':[None],
+                             'password':[None]}, 
+                            columns=['host',
+                                     'username',
+                                     'password'])
+
+    # 将用户密码token等信息保存到系统的当前用户目录 %userprofile%/.GolemQ 目录下面
+    pwd_save_file = 'jqdatasdk_pwd.pickle'
+    if (exists_settings(pwd_save_file)):
+        password = load_settings(pwd_save_file)
+    else:
+        password = input_settings(pattern=password,
+                                  filename=pwd_save_file,)   
+        save_settings(pwd_save_file, password)
+
+    #ID是申请时所填写的手机号；Password为聚宽官网登录密码，新申请用户默认为手机号后6位
+    auth(password.username[0], 
+         password.password[0])
     is_auth = is_auth()
 
     # 查询当日剩余可调用条数
     print(get_query_count())
     print(is_auth)
-    codelist = ['000876']
+
     indexlist = [ '000001.XSHG', '000002.XSHG', '000003.XSHG', '000004.XSHG',  
                   '000005.XSHG', '000006.XSHG', '000007.XSHG', '000009.XSHG',
                   '000009.XSHG', '000010.XSHG', '000015.XSHG', '000016.XSHG',  
@@ -88,12 +103,12 @@ if __name__ == '__main__':
                   '399396', '399997', '159919', 
                   '159941', '159920', ]
     indexlist = jqapi.normalize_code(indexlist)
-    code = codelist[0]
+    code = indexlist[0]
 
     # 创建数据下载目录
-    index_path = mkdirs(os.path.join(mkdirs('datastore'), 'kline', 'index'))
-    print(index_path)
     frequence = '60min'
+    index_path = mkdirs(os.path.join(mkdirs('datastore'), 'kline', 'index', frequence))
+    print(index_path)
 
     for year in range(2017, 2005, -1):
         start_date = '{}-01-01'.format(year)
@@ -129,9 +144,9 @@ if __name__ == '__main__':
 
 
     # 创建数据下载目录
-    stock_path = mkdirs(os.path.join(mkdirs('datastore'), 'kline', 'stock'))
-    print(stock_path)
     frequence = '60min'
+    stock_path = mkdirs(os.path.join(mkdirs('datastore'), 'kline', 'stock', frequence))
+    print(stock_path)
 
     stocklist = ['002230', '600900', '300560', '300146', 
                 '002271', '603129', '002557', '002603', 
